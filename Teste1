@@ -1,0 +1,212 @@
+--====================================
+-- SERVIÇOS
+--====================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local hrp, humanoid
+
+--====================================
+-- FLAGS
+--====================================
+local autoCash = false
+local autoBuy = false
+local autoUpgrade = false
+local speedOn = false
+local jumpOn = false
+local antiReset = true
+
+--====================================
+-- PERSONAGEM
+--====================================
+local function setupChar(char)
+humanoid = char:WaitForChild("Humanoid")
+hrp = char:WaitForChild("HumanoidRootPart")
+end
+if player.Character then setupChar(player.Character) end
+player.CharacterAdded:Connect(setupChar)
+
+--====================================
+-- GUI
+--====================================
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "CompactTycoonPanel"
+gui.ResetOnSpawn = false
+
+-- BOTÃO ABRIR
+local openBtn = Instance.new("TextButton", gui)
+openBtn.Size = UDim2.new(0,40,0,40)
+openBtn.Position = UDim2.new(0,15,0.5,0)
+openBtn.Text = "≡"
+openBtn.TextScaled = true
+openBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+openBtn.TextColor3 = Color3.new(1,1,1)
+openBtn.BorderSizePixel = 0
+openBtn.Active = true
+openBtn.Draggable = true
+Instance.new("UICorner", openBtn).CornerRadius = UDim.new(1,0)
+
+local openStroke = Instance.new("UIStroke", openBtn)
+openStroke.Thickness = 2
+
+-- PAINEL (PEQUENO)
+local panel = Instance.new("Frame", gui)
+panel.Size = UDim2.new(0,230,0,260)
+panel.Position = UDim2.new(0,70,0.45,0)
+panel.BackgroundColor3 = Color3.fromRGB(8,8,8)
+panel.BorderSizePixel = 0
+panel.Visible = false
+panel.Active = true
+panel.Draggable = true
+Instance.new("UICorner", panel).CornerRadius = UDim.new(0,12)
+
+local panelStroke = Instance.new("UIStroke", panel)
+panelStroke.Thickness = 3
+
+--====================================
+-- IMAGEM (SEU DECAL)
+--====================================
+local img = Instance.new("ImageLabel", panel)
+img.Size = UDim2.new(0,60,0,60)
+img.Position = UDim2.new(0.5,-30,0,10)
+img.BackgroundTransparency = 1
+img.Image = "rbxassetid://86086888165326"
+Instance.new("UICorner", img).CornerRadius = UDim.new(1,0)
+
+--====================================
+-- TÍTULO
+--====================================
+local title = Instance.new("TextLabel", panel)
+title.Size = UDim2.new(1,0,0,30)
+title.Position = UDim2.new(0,0,0,75)
+title.BackgroundTransparency = 1
+title.Text = "TYCOON COMPACT"
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.new(1,1,1)
+
+--====================================
+-- FUNÇÃO BOTÃO
+--====================================
+local function mkBtn(text, y)
+local b = Instance.new("TextButton", panel)
+b.Size = UDim2.new(0.9,0,0,30)
+b.Position = UDim2.new(0.05,0,y,0)
+b.Text = text
+b.TextScaled = true
+b.Font = Enum.Font.GothamBold
+b.BackgroundColor3 = Color3.fromRGB(20,20,20)
+b.TextColor3 = Color3.new(1,1,1)
+b.BorderSizePixel = 0
+Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+local s = Instance.new("UIStroke", b)
+s.Thickness = 2
+return b
+end
+
+local cashBtn = mkBtn("AUTO CASH: OFF", 0.38)
+local buyBtn = mkBtn("AUTO BUY: OFF", 0.50)
+local upBtn   = mkBtn("AUTO UPGRADE: OFF", 0.62)
+local spdBtn  = mkBtn("SPEED: OFF", 0.74)
+local jmpBtn  = mkBtn("JUMP: OFF", 0.86)
+
+--====================================
+-- AUTO CASH (SEGURO)
+--====================================
+local function isCollector(p)
+if not p or not p.Parent then return false end
+local n = p.Parent.Name:lower()
+return n:find("cash") or n:find("collector") or n:find("money") or n:find("collect")
+end
+
+task.spawn(function()
+while true do
+if autoCash and hrp then
+for _,v in ipairs(workspace:GetDescendants()) do
+if v:IsA("TouchTransmitter") and isCollector(v) then
+pcall(function()
+firetouchinterest(hrp, v.Parent, 0)
+firetouchinterest(hrp, v.Parent, 1)
+end)
+end
+end
+end
+task.wait(0.4)
+end
+end)
+
+--====================================
+-- AUTO BUY / UPGRADE
+--====================================
+task.spawn(function()
+while true do
+if (autoBuy or autoUpgrade) and hrp then
+for _,v in ipairs(workspace:GetDescendants()) do
+if v:IsA("TouchTransmitter") then
+local n = v.Parent.Name:lower()
+if n:find("buy") or n:find("dropper") or n:find("upgrade") then
+pcall(function()
+firetouchinterest(hrp, v.Parent, 0)
+firetouchinterest(hrp, v.Parent, 1)
+end)
+end
+end
+end
+end
+task.wait(0.45)
+end
+end)
+
+--====================================
+-- SPEED / JUMP
+--====================================
+RunService.RenderStepped:Connect(function()
+if humanoid then
+humanoid.WalkSpeed = speedOn and 28 or 16
+humanoid.JumpPower = jumpOn and 70 or 50
+end
+end)
+
+--====================================
+-- BOTÕES
+--====================================
+cashBtn.MouseButton1Click:Connect(function()
+autoCash = not autoCash
+cashBtn.Text = autoCash and "AUTO CASH: ON" or "AUTO CASH: OFF"
+end)
+
+buyBtn.MouseButton1Click:Connect(function()
+autoBuy = not autoBuy
+buyBtn.Text = autoBuy and "AUTO BUY: ON" or "AUTO BUY: OFF"
+end)
+
+upBtn.MouseButton1Click:Connect(function()
+autoUpgrade = not autoUpgrade
+upBtn.Text = autoUpgrade and "AUTO UPGRADE: ON" or "AUTO UPGRADE: OFF"
+end)
+
+spdBtn.MouseButton1Click:Connect(function()
+speedOn = not speedOn
+spdBtn.Text = speedOn and "SPEED: ON" or "SPEED: OFF"
+end)
+
+jmpBtn.MouseButton1Click:Connect(function()
+jumpOn = not jumpOn
+jmpBtn.Text = jumpOn and "JUMP: ON" or "JUMP: OFF"
+end)
+
+openBtn.MouseButton1Click:Connect(function()
+panel.Visible = not panel.Visible
+end)
+
+--====================================
+-- RGB
+--====================================
+local hue = 0
+RunService.RenderStepped:Connect(function()
+hue = (hue + 1) % 360
+local c = Color3.fromHSV(hue/360,1,1)
+panelStroke.Color = c
+openStroke.Color = c
+end)
